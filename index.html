@@ -1,4 +1,274 @@
 <!DOCTYPE html>
-<html lang="en">    
-    <script src="script.js"></script>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JavaScript Learning Lab</title>
+    <style>
+      :root {
+        --bg: #07111f;
+        --panel: #111d2d;
+        --panel-2: #172b3d;
+        --text: #e6eef8;
+        --muted: #a8bed8;
+        --accent: #62d0ff;
+        --accent-2: #75f0bb;
+        --highlight: rgba(98, 208, 255, 0.2);
+        --shadow: rgba(0, 0, 0, 0.28);
+        --border: rgba(255, 255, 255, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: linear-gradient(135deg, #050c16, #0d1d2c);
+        color: var(--text);
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: 290px 1fr;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        background: rgba(10, 18, 29, 0.95);
+        border-right: 1px solid var(--border);
+        padding: 32px 20px;
+      }
+
+      .sidebar h1 {
+        font-size: 1.9rem;
+        margin: 0 0 10px;
+      }
+
+      .sidebar p {
+        color: var(--muted);
+        line-height: 1.6;
+        margin-bottom: 22px;
+      }
+
+      #concept-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .nav-item {
+        width: 100%;
+        text-align: left;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 12px 14px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+      }
+
+      .nav-item:hover,
+      .nav-item.active {
+        background: linear-gradient(135deg, rgba(98, 208, 255, 0.18), rgba(117, 240, 187, 0.12));
+        border-color: rgba(98, 208, 255, 0.6);
+        transform: translateX(2px);
+      }
+
+      .content {
+        padding: 32px 36px 48px;
+      }
+
+      .hero {
+        margin-bottom: 24px;
+      }
+
+      .eyebrow {
+        color: var(--accent-2);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+
+      .hero h2 {
+        margin: 8px 0 12px;
+        font-size: clamp(2rem, 3vw, 3rem);
+      }
+
+      .hero p {
+        color: var(--muted);
+        max-width: 900px;
+        line-height: 1.7;
+      }
+
+      .card {
+        background: rgba(17, 29, 45, 0.92);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 20px 22px;
+        box-shadow: 0 20px 40px var(--shadow);
+        margin-bottom: 22px;
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .card-header h3 {
+        margin: 0;
+      }
+
+      .button {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: transform 0.15s ease, opacity 0.15s ease;
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+      }
+
+      .button.primary {
+        background: linear-gradient(135deg, var(--accent), #58a4ff);
+        color: #04121f;
+        font-weight: 700;
+      }
+
+      .button:not(.primary) {
+        background: #172b3d;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .code-block {
+        margin: 0;
+        background: #05131f;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 14px;
+        overflow-x: auto;
+      }
+
+      .code-line {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 28px;
+        padding: 3px 8px;
+        border-radius: 8px;
+        font-family: "Consolas", "Monaco", monospace;
+        color: #dfeffc;
+      }
+
+      .code-line.highlight {
+        background: var(--highlight);
+        border: 1px solid rgba(98, 208, 255, 0.7);
+      }
+
+      .line-number {
+        color: #7891b3;
+        width: 26px;
+        display: inline-block;
+        text-align: right;
+      }
+
+      #trace-list {
+        margin: 0;
+        padding-left: 20px;
+        display: grid;
+        gap: 12px;
+        color: var(--muted);
+      }
+
+      #trace-list li {
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      #trace-list li.active {
+        color: var(--text);
+        background: rgba(98, 208, 255, 0.12);
+        border: 1px solid rgba(98, 208, 255, 0.5);
+      }
+
+      .output-box {
+        background: #071822;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 18px;
+        color: var(--accent-2);
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        font-family: "Consolas", "Monaco", monospace;
+      }
+
+      @media (max-width: 820px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .content {
+          padding: 22px 18px 40px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <h1>JavaScript Learning Lab</h1>
+        <p>Practice the ideas of JavaScript in small examples and trace what each line is doing.</p>
+        <nav id="concept-nav" aria-label="Concept navigation"></nav>
+      </aside>
+
+      <main class="content">
+        <section class="hero">
+          <p class="eyebrow">Concept map</p>
+          <h2 id="concept-title">Variables</h2>
+          <p id="concept-summary"></p>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h3>Code example</h3>
+            <button id="run-example" class="button primary">Run example</button>
+          </div>
+          <pre id="code-block" class="code-block"></pre>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h3>Trace the code</h3>
+            <button id="next-trace" class="button">Next step</button>
+          </div>
+          <ol id="trace-list"></ol>
+        </section>
+
+        <section class="card">
+          <h3>Output</h3>
+          <div id="output-box" class="output-box">Press “Run example” to see the result.</div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js" defer></script>
+  </body>
 </html>
