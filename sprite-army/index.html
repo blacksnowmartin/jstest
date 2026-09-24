@@ -10,34 +10,39 @@
             margin: 0;
             padding: 0;
         }
+
         body {
-            background-color: #2c3e50;
+            background: #2c3e50;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
             overflow: hidden;
-            color: #fff;
         }
+
         h1 {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             font-size: 24px;
             text-transform: uppercase;
             letter-spacing: 2px;
             text-shadow: 2px 2px #000;
         }
+
         #gameContainer {
             position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border: 4px solid #1a252f;
             border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
+
         canvas {
             display: block;
-            background: #4a5d4e; /* Military green ground */
+            background: #4a5d4e;
         }
+
         #controls {
             margin-top: 15px;
             background: #1a252f;
@@ -45,9 +50,11 @@
             border-radius: 5px;
             font-size: 14px;
             text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
+
         .key {
+            display: inline-block;
             background: #7f8c8d;
             padding: 2px 6px;
             border-radius: 3px;
@@ -58,273 +65,340 @@
     </style>
 </head>
 <body>
-
     <h1>Army Commando: Target Practice</h1>
+
     <div id="gameContainer">
         <canvas id="gameCanvas" width="800" height="450"></canvas>
     </div>
+
     <div id="controls">
         Move: <span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> or Arrow Keys | Aim/Shoot: <span class="key">Left Click Mouse</span>
     </div>
 
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-// Game State variables
-const keys = {};
-const bullets = [];
-const targets = [];
-let score = 0;
-let mouseX = 0;
-let mouseY = 0;
+        const keys = {};
+        const bullets = [];
+        const targets = [];
 
-// Mouse tracking for aiming
-canvas.addEventListener('mousemove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    mouseX = e.clientX - rect.left;
-    mouseY = e.clientY - rect.top;
-});
+        let score = 0;
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height / 2;
+        let gameFrame = 0;
 
-// Shoot mechanism
-canvas.addEventListener('mousedown', (e) => {
-    if (e.button === 0) { // Left click
-        player.shoot();
-    }
-});
+        const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-// Key listeners
-window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-
-// --- PROCEDURAL SPRITE GENERATOR ---
-// Instead of external assets, we build the army sprite sheet memory textures dynamically.
-function createArmySpriteSheet() {
-    const sheet = document.createElement('canvas');
-    sheet.width = 128;  // 4 frames horizontally (32px each)
-    sheet.height = 64;  // 2 rows: Row 0 = Idle/Walk, Row 1 = Firing
-    const sCtx = sheet.getContext('2d');
-
-    // Draw 4 distinct walking frames
-    for(let f = 0; f < 4; f++) {
-        let xOff = f * 32 + 16;
-        let yOff = 16;
-        let walkCycle = Math.sin(f * Math.PI / 2) * 3;
-
-        // Draw Soldier Body (Idle / Moving Frame)
-        sCtx.fillStyle = '#34495e'; // Boots
-        sCtx.fillRect(xOff - 6, yOff + 10 + (f%2?2:0), 4, 4);
-        sCtx.fillRect(xOff + 2, yOff + 10 + (f%2?0:2), 4, 4);
-
-        sCtx.fillStyle = '#1e3f20'; // Camo pants
-        sCtx.fillRect(xOff - 6, yOff + 4, 12, 8);
-
-        sCtx.fillStyle = '#2d5a27'; // Camo vest
-        sCtx.fillRect(xOff - 7, yOff - 6, 14, 11);
-
-        sCtx.fillStyle = '#d35400'; // Skin/Arms
-        sCtx.fillRect(xOff + 6, yOff - 3, 4, 4); // Holding weapon stance placeholder
-
-        sCtx.fillStyle = '#e0ae85'; // Head
-        sCtx.fillRect(xOff - 4, yOff - 13, 8, 8);
-
-        sCtx.fillStyle = '#1b4d3e'; // Helmet
-        sCtx.fillRect(xOff - 5, yOff - 15, 10, 4);
-
-        sCtx.fillStyle = '#2c3e50'; // Rifle gun barrel
-        sCtx.fillRect(xOff + 2, yOff - 2, 10, 3);
-    }
-
-    // Draw 4 distinct firing frames (Row 1)
-    for(let f = 0; f < 4; f++) {
-        let xOff = f * 32 + 16;
-        let yOff = 48;
-
-        sCtx.fillStyle = '#34495e'; // Boots
-        sCtx.fillRect(xOff - 6, yOff + 10, 4, 4);
-        sCtx.fillRect(xOff + 2, yOff + 10, 4, 4);
-
-        sCtx.fillStyle = '#1e3f20'; // Camo pants
-        sCtx.fillRect(xOff - 6, yOff + 4, 12, 8);
-
-        sCtx.fillStyle = '#2d5a27'; // Vest
-        sCtx.fillRect(xOff - 7, yOff - 6, 14, 11);
-
-        sCtx.fillStyle = '#e0ae85'; // Head
-        sCtx.fillRect(xOff - 4, yOff - 13, 8, 8);
-
-        sCtx.fillStyle = '#1b4d3e'; // Helmet
-        sCtx.fillRect(xOff - 5, yOff - 15, 10, 4);
-
-        sCtx.fillStyle = '#2c3e50'; // Rifle active position
-        sCtx.fillRect(xOff + 4, yOff - 4, 12, 3);
-
-        // Muzzle flash on alternating frames
-        if (f % 2 === 0) {
-            sCtx.fillStyle = '#f1c40f'; // Bright golden flash
-            sCtx.fillRect(xOff + 16, yOff - 6, 4, 6);
-            sCtx.fillStyle = '#e67e22'; 
-            sCtx.fillRect(xOff + 20, yOff - 5, 2, 4);
-        }
-    }
-    return sheet;
-}
-
-const spriteSheetImg = createArmySpriteSheet();
-
-// --- PLAYER OBJECT ---
-const player = {
-    x: 150,
-    y: 225,
-    speed: 3,
-    width: 32,
-    height: 32,
-    frameX: 0,
-    frameY: 0,       // Row 0 = Move, Row 1 = Shoot
-    spriteWidth: 32,
-    spriteHeight: 32,
-    moving: false,
-    shootingTimer: 0,
-    angle: 0,
-
-    update() {
-        this.moving = false;
-
-        // Diagonal mechanics normalizer handling
-        let dx = 0;
-        let dy = 0;
-
-        if (keys['w'] || keys['arrowup']) dy = -1;
-        if (keys['s'] || keys['arrowdown']) dy = 1;
-        if (keys['a'] || keys['arrowleft']) dx = -1;
-        if (keys['d'] || keys['arrowright']) dx = 1;
-
-        if (dx !== 0 || dy !== 0) {
-            this.moving = true;
-            // Normalize velocity vector
-            const length = Math.sqrt(dx * dx + dy * dy);
-            this.x += (dx / length) * this.speed;
-            this.y += (dy / length) * this.speed;
-        }
-
-        // Screen boundary safety checks
-        if (this.x < 20) this.x = 20;
-        if (this.x > canvas.width - 20) this.x = canvas.width - 20;
-        if (this.y < 20) this.y = 20;
-        if (this.y > canvas.height - 20) this.y = canvas.height - 20;
-
-        // Angle vector towards mouse crosshairs
-        this.angle = Math.behind = Math.atan2(mouseY - this.y, mouseX - this.x);
-
-        // Manage states animation frame updates
-        if (this.shootingTimer > 0) {
-            this.frameY = 1; // Firing sprite map index row
-            this.shootingTimer--;
-            if (gameFrame % 6 === 0) {
-                this.frameX = (this.frameX + 1) % 4;
-            }
-        } else if (this.moving) {
-            this.frameY = 0; // Movement row index maps
-            if (gameFrame % 8 === 0) { // Throttle animation tick rate
-                this.frameX = (this.frameX + 1) % 4;
-            }
-        } else {
-            this.frameY = 0;
-            this.frameX = 0; // Stationary default state
-        }
-    },
-
-    shoot() {
-        this.shootingTimer = 15; // Animation state length override
-        
-        // Calculate point of departure relative to rotation angle
-        const bX = this.x + Math.cos(this.angle) * 15;
-        const bY = this.y + Math.sin(this.angle) * 15;
-
-        bullets.push({
-            x: bX,
-            y: bY,
-            vx: Math.cos(this.angle) * 8,
-            vy: Math.sin(this.angle) * 8
+        canvas.addEventListener('mousemove', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = clamp(event.clientX - rect.left, 0, canvas.width);
+            mouseY = clamp(event.clientY - rect.top, 0, canvas.height);
         });
-    },
 
-    draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-
-        // Draw cropped individual asset pieces cleanly from our procedural sheet
-        ctx.drawImage(
-            spriteSheetImg,
-            this.frameX * this.spriteWidth, this.frameY * this.spriteHeight,
-            this.spriteWidth, this.spriteHeight,
-            -this.width, -this.height, 
-            this.width * 2, this.height * 2
-        );
-        ctx.restore();
-    }
-};
-
-// --- TARGET BARRIERS (ENEMIES) ---
-function spawnTarget() {
-    if (targets.length < 4 && Math.random() < 0.02) {
-        targets.push({
-            x: canvas.width + 40,
-            y: Math.random() * (canvas.height - 80) + 40,
-            speed: Math.random() * 1 + 1,
-            hp: 2,
-            radius: 18
+        canvas.addEventListener('mousedown', (event) => {
+            if (event.button === 0) {
+                player.shoot();
+            }
         });
-    }
-}
 
-// --- GAME LOOP PROCESSORS ---
-let gameFrame = 0;
+        window.addEventListener('keydown', (event) => {
+            keys[event.key.toLowerCase()] = true;
+        });
 
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    gameFrame++;
+        window.addEventListener('keyup', (event) => {
+            keys[event.key.toLowerCase()] = false;
+        });
 
-    // Background details (Grid lines mimicking training camp floor fields)
-    ctx.strokeStyle = '#3e5042';
-    ctx.lineWidth = 1;
-    for(let i=0; i<canvas.width; i+=40) {
-        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-    }
-    for(let j=0; j<canvas.height; j+=40) {
-        ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
-    }
+        function createArmySpriteSheet() {
+            const sheet = document.createElement('canvas');
+            sheet.width = 128;
+            sheet.height = 64;
+            const sCtx = sheet.getContext('2d');
 
-    // 1. Process & Draw Target Barriers
-    spawnTarget();
-    for (let i = targets.length - 1; i >= 0; i--) {
-        let t = targets[i];
-        t.x -= t.speed;
+            for (let frame = 0; frame < 4; frame++) {
+                const xOff = frame * 32 + 16;
+                const yOff = 16;
 
-        // Draw target barrier block
-        ctx.fillStyle = t.hp > 1 ? '#c0392b' : '#d35400';
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        
-        // Inner Target ring
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, t.radius / 2, 0, Math.PI * 2);
-        ctx.fillStyle = '#fff';
-        ctx.fill();
+                sCtx.fillStyle = '#34495e';
+                sCtx.fillRect(xOff - 6, yOff + 10 + (frame % 2 ? 2 : 0), 4, 4);
+                sCtx.fillRect(xOff + 2, yOff + 10 + (frame % 2 ? 0 : 2), 4, 4);
 
-        // Clear targets that slide off screen completely
-        if (t.x < -40) {
-            targets.splice(i, 1);
+                sCtx.fillStyle = '#1e3f20';
+                sCtx.fillRect(xOff - 6, yOff + 4, 12, 8);
+
+                sCtx.fillStyle = '#2d5a27';
+                sCtx.fillRect(xOff - 7, yOff - 6, 14, 11);
+
+                sCtx.fillStyle = '#d35400';
+                sCtx.fillRect(xOff + 6, yOff - 3, 4, 4);
+
+                sCtx.fillStyle = '#e0ae85';
+                sCtx.fillRect(xOff - 4, yOff - 13, 8, 8);
+
+                sCtx.fillStyle = '#1b4d3e';
+                sCtx.fillRect(xOff - 5, yOff - 15, 10, 4);
+
+                sCtx.fillStyle = '#2c3e50';
+                sCtx.fillRect(xOff + 2, yOff - 2, 10, 3);
+            }
+
+            for (let frame = 0; frame < 4; frame++) {
+                const xOff = frame * 32 + 16;
+                const yOff = 48;
+
+                sCtx.fillStyle = '#34495e';
+                sCtx.fillRect(xOff - 6, yOff + 10, 4, 4);
+                sCtx.fillRect(xOff + 2, yOff + 10, 4, 4);
+
+                sCtx.fillStyle = '#1e3f20';
+                sCtx.fillRect(xOff - 6, yOff + 4, 12, 8);
+
+                sCtx.fillStyle = '#2d5a27';
+                sCtx.fillRect(xOff - 7, yOff - 6, 14, 11);
+
+                sCtx.fillStyle = '#e0ae85';
+                sCtx.fillRect(xOff - 4, yOff - 13, 8, 8);
+
+                sCtx.fillStyle = '#1b4d3e';
+                sCtx.fillRect(xOff - 5, yOff - 15, 10, 4);
+
+                sCtx.fillStyle = '#2c3e50';
+                sCtx.fillRect(xOff + 4, yOff - 4, 12, 3);
+
+                if (frame % 2 === 0) {
+                    sCtx.fillStyle = '#f1c40f';
+                    sCtx.fillRect(xOff + 16, yOff - 6, 4, 6);
+                    sCtx.fillStyle = '#e67e22';
+                    sCtx.fillRect(xOff + 20, yOff - 5, 2, 4);
+                }
+            }
+
+            return sheet;
         }
-    }
 
-    // 2. Process Player logic
-    player.update();
-    player.draw();
+        const spriteSheetImg = createArmySpriteSheet();
 
-    // 3. Process & Draw Projectile Bullets
+        const player = {
+            x: 150,
+            y: 225,
+            speed: 3,
+            width: 16,
+            height: 16,
+            spriteWidth: 32,
+            spriteHeight: 32,
+            frameX: 0,
+            frameY: 0,
+            moving: false,
+            shootingTimer: 0,
+            angle: 0,
+
+            update() {
+                this.moving = false;
+
+                let dx = 0;
+                let dy = 0;
+
+                if (keys.w || keys.arrowup) dy -= 1;
+                if (keys.s || keys.arrowdown) dy += 1;
+                if (keys.a || keys.arrowleft) dx -= 1;
+                if (keys.d || keys.arrowright) dx += 1;
+
+                if (dx !== 0 || dy !== 0) {
+                    this.moving = true;
+                    const length = Math.hypot(dx, dy) || 1;
+                    this.x += (dx / length) * this.speed;
+                    this.y += (dy / length) * this.speed;
+                }
+
+                this.x = clamp(this.x, 20, canvas.width - 20);
+                this.y = clamp(this.y, 20, canvas.height - 20);
+
+                this.angle = Math.atan2(mouseY - this.y, mouseX - this.x);
+
+                if (this.shootingTimer > 0) {
+                    this.frameY = 1;
+                    this.shootingTimer -= 1;
+                    if (gameFrame % 6 === 0) {
+                        this.frameX = (this.frameX + 1) % 4;
+                    }
+                } else if (this.moving) {
+                    this.frameY = 0;
+                    if (gameFrame % 8 === 0) {
+                        this.frameX = (this.frameX + 1) % 4;
+                    }
+                } else {
+                    this.frameY = 0;
+                    this.frameX = 0;
+                }
+            },
+
+            shoot() {
+                this.shootingTimer = 15;
+
+                const bulletX = this.x + Math.cos(this.angle) * 18;
+                const bulletY = this.y + Math.sin(this.angle) * 18;
+
+                bullets.push({
+                    x: bulletX,
+                    y: bulletY,
+                    vx: Math.cos(this.angle) * 8,
+                    vy: Math.sin(this.angle) * 8,
+                    radius: 3
+                });
+            },
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.drawImage(
+                    spriteSheetImg,
+                    this.frameX * this.spriteWidth,
+                    this.frameY * this.spriteHeight,
+                    this.spriteWidth,
+                    this.spriteHeight,
+                    -this.width,
+                    -this.height,
+                    this.width * 2,
+                    this.height * 2
+                );
+                ctx.restore();
+            }
+        };
+
+        function spawnTarget() {
+            if (targets.length >= 4) return;
+            if (Math.random() < 0.02) {
+                targets.push({
+                    x: canvas.width + 40,
+                    y: Math.random() * (canvas.height - 80) + 40,
+                    speed: Math.random() * 1.2 + 1.2,
+                    hp: 2,
+                    radius: 18
+                });
+            }
+        }
+
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.x += bullet.vx;
+                bullet.y += bullet.vy;
+
+                if (
+                    bullet.x < -10 ||
+                    bullet.x > canvas.width + 10 ||
+                    bullet.y < -10 ||
+                    bullet.y > canvas.height + 10
+                ) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+
+                for (let j = targets.length - 1; j >= 0; j--) {
+                    const target = targets[j];
+                    const dx = bullet.x - target.x;
+                    const dy = bullet.y - target.y;
+                    const distance = Math.hypot(dx, dy);
+
+                    if (distance <= bullet.radius + target.radius) {
+                        target.hp -= 1;
+                        bullets.splice(i, 1);
+
+                        if (target.hp <= 0) {
+                            targets.splice(j, 1);
+                            score += 10;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        function drawBullets() {
+            for (const bullet of bullets) {
+                ctx.beginPath();
+                ctx.fillStyle = '#f1c40f';
+                ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawTargets() {
+            for (const target of targets) {
+                ctx.beginPath();
+                ctx.fillStyle = target.hp > 1 ? '#c0392b' : '#d35400';
+                ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.fillStyle = '#fff';
+                ctx.arc(target.x, target.y, target.radius / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function updateTargets() {
+            for (let i = targets.length - 1; i >= 0; i--) {
+                const target = targets[i];
+                target.x -= target.speed;
+
+                if (target.x < -40) {
+                    targets.splice(i, 1);
+                }
+            }
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = '#3e5042';
+            ctx.lineWidth = 1;
+
+            for (let x = 0; x < canvas.width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y < canvas.height; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawScore() {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 18px Segoe UI';
+            ctx.fillText(`Score: ${score}`, 20, 30);
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            gameFrame++;
+
+            drawGrid();
+            spawnTarget();
+            updateTargets();
+
+            player.update();
+            player.draw();
+
+            updateBullets();
+            drawTargets();
+            drawBullets();
+            drawScore();
+
+            requestAnimationFrame(animate);
+        }
+
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
