@@ -5,40 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vanilla JS Sprite Animation Game</title>
     <style>
+        :root {
+            --bg: #222;
+            --panel: #333;
+            --text: #fff;
+            --muted: #aaa;
+            --border: #fff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            background: #222;
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
+            min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
         }
+
         #game-container {
             text-align: center;
-            position: relative;
         }
+
+        .ui-text {
+            margin: 0 0 10px;
+            font-size: 24px;
+        }
+
         canvas {
-            background: #333;
-            border: 4px solid #fff;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            display: block;
+            background: var(--panel);
+            border: 4px solid var(--border);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             cursor: pointer;
         }
-        .ui-text {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
+
         .instructions {
             margin-top: 10px;
-            color: #aaa;
+            color: var(--muted);
         }
     </style>
 </head>
 <body>
-
     <div id="game-container">
         <div class="ui-text">Score: <span id="score-display">0</span></div>
         <canvas id="gameCanvas" width="600" height="400"></canvas>
@@ -50,25 +64,41 @@
         const ctx = canvas.getContext('2d');
         const scoreDisplay = document.getElementById('score-display');
 
-        let score = 0;
+        const SPRITE_WIDTH = 64;
+        const SPRITE_HEIGHT = 64;
+        const TOTAL_FRAMES = 4;
 
-        // --- SPRITE CONFIGURATION ---
-        // Generates a base64 dummy sprite sheet programmatically for standalone operation.
-        // It simulates a horizontal sprite sheet containing 4 frames of a bouncing slime creature.
         const spriteSheet = new Image();
-        spriteSheet.src = 'data:image/svg+xml;utf8,<svg xmlns="http://w3.org" width="256" height="64" viewBox="0 0 256 64"><rect width="64" height="64" fill="none"/><ellipse cx="32" cy="45" rx="25" ry="15" fill="%234caf50"/><ellipse cx="22" cy="40" rx="4" ry="4" fill="white"/><ellipse cx="42" cy="40" rx="4" ry="4" fill="white"/><rect x="64" width="64" height="64" fill="none"/><ellipse cx="96" cy="30" rx="20" ry="25" fill="%234caf50"/><ellipse cx="88" cy="25" rx="4" ry="4" fill="white"/><ellipse cx="104" cy="25" rx="4" ry="4" fill="white"/><rect x="128" width="64" height="64" fill="none"/><ellipse cx="160" cy="15" rx="18" ry="15" fill="%234caf50"/><ellipse cx="152" cy="15" rx="4" ry="4" fill="white"/><ellipse cx="168" cy="15" rx="4" ry="4" fill="white"/><rect x="192" width="64" height="64" fill="none"/><ellipse cx="224" cy="40" rx="24" ry="18" fill="%238bc34a"/><ellipse cx="216" cy="35" rx="4" ry="4" fill="white"/><ellipse cx="232" cy="35" rx="4" ry="4" fill="white"/></svg>';
+        spriteSheet.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="256" height="64" viewBox="0 0 256 64">
+                <rect width="64" height="64" fill="none"/>
+                <ellipse cx="32" cy="45" rx="25" ry="15" fill="#4caf50"/>
+                <ellipse cx="22" cy="40" rx="4" ry="4" fill="white"/>
+                <ellipse cx="42" cy="40" rx="4" ry="4" fill="white"/>
 
-        const SPRITE_WIDTH = 64;   // Width of a single frame
-        const SPRITE_HEIGHT = 64;  // Height of a single frame
-        const TOTAL_FRAMES = 4;    // Total frames across the row
+                <rect x="64" width="64" height="64" fill="none"/>
+                <ellipse cx="96" cy="30" rx="20" ry="25" fill="#4caf50"/>
+                <ellipse cx="88" cy="25" rx="4" ry="4" fill="white"/>
+                <ellipse cx="104" cy="25" rx="4" ry="4" fill="white"/>
 
-        // --- GAME OBJECTS ---
-        class Enemy {
+                <rect x="128" width="64" height="64" fill="none"/>
+                <ellipse cx="160" cy="15" rx="18" ry="15" fill="#4caf50"/>
+                <ellipse cx="152" cy="15" rx="4" ry="4" fill="white"/>
+                <ellipse cx="168" cy="15" rx="4" ry="4" fill="white"/>
+
+                <rect x="192" width="64" height="64" fill="none"/>
+                <ellipse cx="224" cy="40" rx="24" ry="18" fill="#8bc34a"/>
+                <ellipse cx="216" cy="35" rx="4" ry="4" fill="white"/>
+                <ellipse cx="232" cy="35" rx="4" ry="4" fill="white"/>
+            </svg>
+        `);
+
+        class Slime {
             constructor() {
-                this.resetPosition();
-                this.frameX = 0;       // Track current frame column
+                this.frameX = 0;
                 this.gameFrame = 0;
-                this.staggerFrames = 8; // Lower value = faster animation speed
+                this.staggerFrames = 8;
+                this.resetPosition();
             }
 
             resetPosition() {
@@ -77,12 +107,11 @@
             }
 
             update() {
-                // Throttle animation frame switching
                 this.gameFrame++;
+
                 if (this.gameFrame % this.staggerFrames === 0) {
                     this.frameX = (this.frameX + 1) % TOTAL_FRAMES;
-                    
-                    // Periodically reposition to force the player to chase it
+
                     if (this.frameX === 0 && Math.random() > 0.5) {
                         this.resetPosition();
                     }
@@ -90,52 +119,83 @@
             }
 
             draw() {
-                // 9-Argument drawImage: image, sx, sy, sw, sh, dx, dy, dw, dh
                 ctx.drawImage(
                     spriteSheet,
-                    this.frameX * SPRITE_WIDTH, 0, // Source coordinates (X, Y)
-                    SPRITE_WIDTH, SPRITE_HEIGHT,   // Source size (width, height)
-                    this.x, this.y,               // Canvas destination (X, Y)
-                    SPRITE_WIDTH, SPRITE_HEIGHT    // Canvas output size
+                    this.frameX * SPRITE_WIDTH,
+                    0,
+                    SPRITE_WIDTH,
+                    SPRITE_HEIGHT,
+                    this.x,
+                    this.y,
+                    SPRITE_WIDTH,
+                    SPRITE_HEIGHT
+                );
+            }
+
+            containsPoint(x, y) {
+                return (
+                    x >= this.x &&
+                    x <= this.x + SPRITE_WIDTH &&
+                    y >= this.y &&
+                    y <= this.y + SPRITE_HEIGHT
                 );
             }
         }
 
-        const targetSlime = new Enemy();
-
-        // --- CLICK ACCURACY DETECTION ---
-        canvas.addEventListener('mousedown', (event) => {
-            const rect = canvas.getBoundingClientRect();
-            const clickX = event.clientX - rect.left;
-            const clickY = event.clientY - rect.top;
-
-            // Check if user clicked inside the sprite's boundary box
-            if (
-                clickX >= targetSlime.x &&
-                clickX <= targetSlime.x + SPRITE_WIDTH &&
-                clickY >= targetSlime.y &&
-                clickY <= targetSlime.y + SPRITE_HEIGHT
-            ) {
-                score++;
-                scoreDisplay.textContent = score;
-                targetSlime.resetPosition();
+        class Game {
+            constructor() {
+                this.score = 0;
+                this.slime = new Slime();
+                this.isRunning = false;
             }
-        });
 
-        // --- CORE GAME LOOP ---
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Wipe the frame
-            
-            targetSlime.update();
-            targetSlime.draw();
+            increaseScore() {
+                this.score += 1;
+                scoreDisplay.textContent = String(this.score);
+            }
 
-            requestAnimationFrame(animate); // Recursively recall loop
+            handlePointerDown(event) {
+                const rect = canvas.getBoundingClientRect();
+                const clickX = event.clientX - rect.left;
+                const clickY = event.clientY - rect.top;
+
+                if (this.slime.containsPoint(clickX, clickY)) {
+                    this.increaseScore();
+                    this.slime.resetPosition();
+                }
+            }
+
+            update() {
+                this.slime.update();
+            }
+
+            draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                this.slime.draw();
+            }
+
+            loop() {
+                if (!this.isRunning) return;
+
+                this.update();
+                this.draw();
+                requestAnimationFrame(() => this.loop());
+            }
+
+            start() {
+                this.isRunning = true;
+                this.loop();
+            }
         }
 
-        // Initialize game after asset resolution
+        const game = new Game();
+
+        canvas.addEventListener('mousedown', (event) => game.handlePointerDown(event));
+
         spriteSheet.onload = () => {
-            animate();
+            game.start();
         };
     </script>
 </body>
 </html>
+
