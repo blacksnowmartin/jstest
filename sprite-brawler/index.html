@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sprite Echo</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="game-shell">
+      <header class="hud">
+        <div class="brand">
+          <span class="badge">ARCANE</span>
+          <h1>Sprite Echo</h1>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <label>Health</label>
+            <strong id="healthValue">100</strong>
+          </div>
+          <div class="stat">
+            <label>Wave</label>
+            <strong id="waveValue">1</strong>
+          </div>
+          <div class="stat">
+            <label>Score</label>
+            <strong id="scoreValue">0</strong>
+          </div>
+        </div>
+      </header>
+
+      <div class="stage-wrap">
+        <canvas id="gameCanvas" width="960" height="540" aria-label="Sprite action game"></canvas>
+
+        <div id="overlay" class="overlay visible">
+          <div class="dialog">
+            <p class="eyebrow">Arcade survival</p>
+            <h2>Sprite Echo</h2>
+            <p>Fight off the moonlit swarm and keep the crystal alive.</p>
+            <button id="startButton" type="button">Start run</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <span>Move: WASD / Arrows</span>
+        <span>Slash: Space</span>
+        <span>Restart: R</span>
+      </div>
+    </div>
+
+    <script src="./game.js"></script>
+  </body>
+</html>
