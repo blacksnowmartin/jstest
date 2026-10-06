@@ -27,7 +27,7 @@ const state = {
 
 const player = {
     x: 50,
-    y: config.groundY,
+    y: config.groundY - 64,
     width: 52,
     height: 64,
     spriteWidth: 64,
@@ -92,7 +92,7 @@ function resetGame() {
     state.speed = config.baseSpeed;
     state.obstacles = [];
     state.spawnTimer = 0;
-    player.y = config.groundY;
+    player.y = config.groundY - player.height;
     player.vy = 0;
     player.grounded = true;
     player.frameX = 0;
@@ -124,7 +124,7 @@ function spawnObstacle() {
     const height = 24 + Math.random() * 28;
     state.obstacles.push({
         x: canvas.width + 10,
-        y: config.groundY + config.groundHeight - height,
+        y: config.groundY - height,
         width: 18 + Math.random() * 18,
         height,
         color: '#f97316',
@@ -135,8 +135,8 @@ function handlePhysics(delta) {
     player.vy += player.gravity * delta;
     player.y += player.vy * delta;
 
-    if (player.y >= config.groundY) {
-        player.y = config.groundY;
+    if (player.y + player.height >= config.groundY) {
+        player.y = config.groundY - player.height;
         player.vy = 0;
         player.grounded = true;
     }
@@ -266,13 +266,13 @@ function gameLoop(timestamp) {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
-    handlePhysics(delta);
-    updateObstacles(delta);
-    animatePlayer();
-    drawObstacles();
-
+    // draw ground before player so player is never hidden behind it
     ctx.fillStyle = '#2c3e50';
     ctx.fillRect(0, config.groundY, canvas.width, config.groundHeight);
+    handlePhysics(delta);
+    updateObstacles(delta);
+    drawObstacles();
+    animatePlayer();
 
     if (state.running) {
         state.animationId = requestAnimationFrame(gameLoop);
