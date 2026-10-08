@@ -2,14 +2,16 @@ const canvas = document.getElementById('spriteCanvas');
 const ctx = canvas.getContext('2d');
 
 const spriteSheet = document.createElement('canvas');
-const sctx = spriteSheet.getContext('2d');
+const spriteCtx = spriteSheet.getContext('2d');
 
 const frameWidth = 32;
 const frameHeight = 32;
 const frameCount = 8;
 const fps = 12;
-
 const groundY = 170;
+
+const controls = { left: false, right: false };
+
 const character = {
   x: 110,
   y: 95,
@@ -17,23 +19,17 @@ const character = {
   height: 120,
   facing: 1,
   velocityX: 0,
-  walkCycle: 0,
   moving: false,
-};
-
-const keys = {
-  left: false,
-  right: false,
 };
 
 spriteSheet.width = frameWidth * frameCount;
 spriteSheet.height = frameHeight;
 
 function drawShadow(x, y) {
-  sctx.fillStyle = 'rgba(18, 26, 36, 0.22)';
-  sctx.beginPath();
-  sctx.ellipse(x + 16, y + 30, 11.5, 4.5, 0, 0, Math.PI * 2);
-  sctx.fill();
+  spriteCtx.fillStyle = 'rgba(18, 26, 36, 0.22)';
+  spriteCtx.beginPath();
+  spriteCtx.ellipse(x + 16, y + 30, 11.5, 4.5, 0, 0, Math.PI * 2);
+  spriteCtx.fill();
 }
 
 function drawCharacter(frameIndex) {
@@ -43,57 +39,49 @@ function drawCharacter(frameIndex) {
   const armSwing = step * 0.8;
   const bodyBob = step * 0.15;
 
-  sctx.clearRect(x, 0, frameWidth, frameHeight);
+  spriteCtx.clearRect(x, 0, frameWidth, frameHeight);
   drawShadow(x, 0);
 
-  // legs
-  sctx.strokeStyle = '#2d3f52';
-  sctx.lineWidth = 4;
-  sctx.lineCap = 'round';
-  sctx.beginPath();
-  sctx.moveTo(x + 12, 22);
-  sctx.lineTo(x + 10, 28 + step * 0.8);
-  sctx.moveTo(x + 20, 22);
-  sctx.lineTo(x + 22, 28 - step * 0.8);
-  sctx.stroke();
+  spriteCtx.strokeStyle = '#2d3f52';
+  spriteCtx.lineWidth = 4;
+  spriteCtx.lineCap = 'round';
+  spriteCtx.beginPath();
+  spriteCtx.moveTo(x + 12, 22);
+  spriteCtx.lineTo(x + 10, 28 + step * 0.8);
+  spriteCtx.moveTo(x + 20, 22);
+  spriteCtx.lineTo(x + 22, 28 - step * 0.8);
+  spriteCtx.stroke();
 
-  // torso
-  sctx.fillStyle = '#73d693';
-  sctx.fillRect(x + 8, 11 + bodyBob, 16, 11);
-  sctx.fillStyle = '#57bf7d';
-  sctx.fillRect(x + 10, 14 + bodyBob, 12, 6);
+  spriteCtx.fillStyle = '#73d693';
+  spriteCtx.fillRect(x + 8, 11 + bodyBob, 16, 11);
+  spriteCtx.fillStyle = '#57bf7d';
+  spriteCtx.fillRect(x + 10, 14 + bodyBob, 12, 6);
 
-  // head
-  sctx.fillStyle = '#f5d3a0';
-  sctx.fillRect(x + 10, 4 + bodyBob, 12, 9);
+  spriteCtx.fillStyle = '#f5d3a0';
+  spriteCtx.fillRect(x + 10, 4 + bodyBob, 12, 9);
 
-  // eyes
-  sctx.fillStyle = '#173046';
-  sctx.fillRect(x + 13, 7 + bodyBob, 2, 2);
-  sctx.fillRect(x + 17, 7 + bodyBob, 2, 2);
+  spriteCtx.fillStyle = '#173046';
+  spriteCtx.fillRect(x + 13, 7 + bodyBob, 2, 2);
+  spriteCtx.fillRect(x + 17, 7 + bodyBob, 2, 2);
 
-  // hair
-  sctx.fillStyle = '#3b2d24';
-  sctx.fillRect(x + 10, 4 + bodyBob, 12, 2);
+  spriteCtx.fillStyle = '#3b2d24';
+  spriteCtx.fillRect(x + 10, 4 + bodyBob, 12, 2);
 
-  // arms
-  sctx.strokeStyle = '#f5d3a0';
-  sctx.lineWidth = 3;
-  sctx.beginPath();
-  sctx.moveTo(x + 9, 15 + bodyBob);
-  sctx.lineTo(x + 6, 18 + armSwing);
-  sctx.moveTo(x + 23, 15 + bodyBob);
-  sctx.lineTo(x + 26, 18 - armSwing);
-  sctx.stroke();
+  spriteCtx.strokeStyle = '#f5d3a0';
+  spriteCtx.lineWidth = 3;
+  spriteCtx.beginPath();
+  spriteCtx.moveTo(x + 9, 15 + bodyBob);
+  spriteCtx.lineTo(x + 6, 18 + armSwing);
+  spriteCtx.moveTo(x + 23, 15 + bodyBob);
+  spriteCtx.lineTo(x + 26, 18 - armSwing);
+  spriteCtx.stroke();
 
-  // accent
-  sctx.fillStyle = '#dffde9';
-  sctx.fillRect(x + 12, 16 + bodyBob, 4, 3);
+  spriteCtx.fillStyle = '#dffde9';
+  spriteCtx.fillRect(x + 12, 16 + bodyBob, 4, 3);
 
-  // boots
-  sctx.fillStyle = '#1b2d3d';
-  sctx.fillRect(x + 8, 28 + bodyBob, 6, 3);
-  sctx.fillRect(x + 18, 28 + bodyBob, 6, 3);
+  spriteCtx.fillStyle = '#1b2d3d';
+  spriteCtx.fillRect(x + 8, 28 + bodyBob, 6, 3);
+  spriteCtx.fillRect(x + 18, 28 + bodyBob, 6, 3);
 }
 
 function generateSpriteSheet() {
@@ -103,8 +91,8 @@ function generateSpriteSheet() {
 }
 
 function updateControls() {
-  const left = keys.left;
-  const right = keys.right;
+  const left = controls.left;
+  const right = controls.right;
 
   character.moving = left || right;
 
@@ -122,12 +110,7 @@ function updateControls() {
   }
 
   character.x += character.velocityX;
-  if (character.x < 20) {
-    character.x = 20;
-  }
-  if (character.x > canvas.width - 40) {
-    character.x = canvas.width - 40;
-  }
+  character.x = Math.min(Math.max(character.x, 20), canvas.width - 40);
 }
 
 function render() {
@@ -138,14 +121,12 @@ function render() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // sky and far ground
   const sky = ctx.createLinearGradient(0, 0, 0, 170);
   sky.addColorStop(0, '#cfe8ff');
   sky.addColorStop(1, '#e8f2c8');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, canvas.width, 170);
 
-  // ground
   ctx.fillStyle = '#d7bf73';
   ctx.fillRect(0, groundY, canvas.width, 50);
   ctx.strokeStyle = '#9c7c4c';
@@ -155,7 +136,6 @@ function render() {
   ctx.lineTo(canvas.width, groundY);
   ctx.stroke();
 
-  // slight character bobbing to suggest motion
   const bob = character.moving ? Math.sin((performance.now() / 1000) * fps * 0.75) * 2 : 0;
   const drawX = character.x;
   const drawY = 72 + bob;
@@ -168,29 +148,25 @@ function render() {
   ctx.restore();
 }
 
+function handleKeyPress(event, isPressed) {
+  const key = event.key.toLowerCase();
+
+  if (key === 'arrowleft' || key === 'a') {
+    controls.left = isPressed;
+  }
+  if (key === 'arrowright' || key === 'd') {
+    controls.right = isPressed;
+  }
+}
+
 function animate() {
   updateControls();
   render();
   requestAnimationFrame(animate);
 }
 
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') {
-    keys.left = true;
-  }
-  if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') {
-    keys.right = true;
-  }
-});
-
-document.addEventListener('keyup', (event) => {
-  if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') {
-    keys.left = false;
-  }
-  if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') {
-    keys.right = false;
-  }
-});
+document.addEventListener('keydown', (event) => handleKeyPress(event, true));
+document.addEventListener('keyup', (event) => handleKeyPress(event, false));
 
 generateSpriteSheet();
 animate();

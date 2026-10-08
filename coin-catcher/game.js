@@ -1,154 +1,203 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// --- GAME CONFIG & STATE ---
-let score = 0;
-let gameOver = false;
-const keys = {};
+const config = {
+  boardWidth: canvas.width,
+  boardHeight: canvas.height,
+  playerSpeed: 5,
+  pickupValue: 10,
+};
 
-// --- LOAD SPRITES ---
-// Using placeholder character and coin sprite sheets from OpenGameArt / public assets
-const playerSprite = new Image();
-playerSprite.src = 'https://githubusercontent.com'; 
+const state = {
+  score: 0,
+  lastTime: 0,
+};
 
-const coinSprite = new Image();
-coinSprite.src = 'https://githubusercontent.com'; 
+const keys = new Set();
 
-// --- PLAYER OBJECT ---
 const player = {
-    x: 100,
-    y: 350,
-    width: 64,       // Rendered width
-    height: 64,      // Rendered height
-    speed: 5,
-    // Sprite animation variables
-    spriteWidth: 32, // The width of a single frame in the sprite sheet
-    spriteHeight: 32,// The height of a single frame in the sprite sheet
-    frameX: 0,       // Current column frame
-    frameY: 0,       // Current row frame (e.g., 0 = Idle, 1 = Move Right, 2 = Move Left)
-    gameFrame: 0,
-    staggerFrames: 6 // Slows down animation speed
+  x: 100,
+  y: 350,
+  width: 64,
+  height: 64,
+  speed: config.playerSpeed,
+  spriteWidth: 32,
+  spriteHeight: 32,
+  frameX: 0,
+  frameY: 0,
+  gameFrame: 0,
+  staggerFrames: 6,
 };
 
-// --- COIN OBJECT ---
 const coin = {
-    x: Math.random() * (canvas.width - 50),
-    y: Math.random() * (canvas.height - 50),
-    width: 40,
-    height: 40
+  x: 0,
+  y: 0,
+  width: 40,
+  height: 40,
 };
 
-// --- INPUT LISTENERS ---
-window.addEventListener('keydown', (e) => {
-    keys[e.key] = true;
-});
-window.addEventListener('keyup', (e) => {
-    keys[e.key] = false;
-});
+function cloneSpriteSheet() {
+  const sheet = document.createElement('canvas');
+  sheet.width = 256;
+  sheet.height = 64;
+  const spriteCtx = sheet.getContext('2d');
 
-// --- COLLISION DETECTION ---
+  for (let frame = 0; frame < 4; frame += 1) {
+    const x = frame * 64;
+
+    spriteCtx.fillStyle = '#1f2937';
+    spriteCtx.fillRect(x + 18, 30, 28, 18);
+
+    spriteCtx.fillStyle = '#f5d76b';
+    spriteCtx.fillRect(x + 16, 20, 30, 18);
+
+    spriteCtx.fillStyle = '#0f172a';
+    spriteCtx.fillRect(x + 24, 26, 4, 4);
+    spriteCtx.fillRect(x + 36, 26, 4, 4);
+
+    spriteCtx.fillStyle = '#f97316';
+    spriteCtx.fillRect(x + 10, 36, 12, 14);
+    spriteCtx.fillRect(x + 42, 36, 12, 14);
+
+    spriteCtx.fillStyle = '#d1d5db';
+    spriteCtx.fillRect(x + 18, 48, 8, 12);
+    spriteCtx.fillRect(x + 38, 48, 8, 12);
+  }
+
+  const coinCanvas = document.createElement('canvas');
+  coinCanvas.width = 40;
+  coinCanvas.height = 40;
+  const coinCtx = coinCanvas.getContext('2d');
+
+  coinCtx.fillStyle = '#facc15';
+  coinCtx.beginPath();
+  coinCtx.arc(20, 20, 14, 0, Math.PI * 2);
+  coinCtx.fill();
+
+  coinCtx.fillStyle = '#fef3c7';
+  coinCtx.beginPath();
+  coinCtx.arc(16, 16, 6, 0, Math.PI * 2);
+  coinCtx.fill();
+
+  return { player: sheet, coin: coinCanvas };
+}
+
+const spriteSheet = cloneSpriteSheet();
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function respawnCoin() {
+  coin.x = Math.random() * (canvas.width - coin.width);
+  coin.y = Math.random() * (canvas.height - coin.height);
+}
+
 function checkCollision(rect1, rect2) {
-    return (
-        rect1.x < rect2.x + rect2.width &&
-        rect1.x + rect1.width > rect2.x &&
-        rect1.y < rect2.y + rect2.height &&
-        rect1.y + rect1.height > rect2.y
-    );
+  return (
+    rect1.x < rect2.x + rect2.width &&
+    rect1.x + rect1.width > rect2.x &&
+    rect1.y < rect2.y + rect2.height &&
+    rect1.y + rect1.height > rect2.y
+  );
 }
 
-// --- UPDATE GAME LOGIC ---
-function update() {
-    let isMoving = false;
+function update(dt) {
+  let isMoving = false;
 
-    // Movement & Frame Rows (frameY) mapping
-    if (keys['ArrowLeft'] || keys['a']) {
-        player.x -= player.speed;
-        player.frameY = 2; // Assume Row 2 is facing left
-        isMoving = true;
-    }
-    if (keys['ArrowRight'] || keys['d']) {
-        player.x += player.speed;
-        player.frameY = 1; // Assume Row 1 is facing right
-        isMoving = true;
-    }
-    if (keys['ArrowUp'] || keys['w']) {
-        player.y -= player.speed;
-        isMoving = true;
-    }
-    if (keys['ArrowDown'] || keys['s']) {
-        player.y += player.speed;
-        isMoving = true;
-    }
+  if (keys.has('arrowleft') || keys.has('a')) {
+    player.x -= player.speed * dt;
+    player.frameY = 2;
+    isMoving = true;
+  }
+  if (keys.has('arrowright') || keys.has('d')) {
+    player.x += player.speed * dt;
+    player.frameY = 1;
+    isMoving = true;
+  }
+  if (keys.has('arrowup') || keys.has('w')) {
+    player.y -= player.speed * dt;
+    isMoving = true;
+  }
+  if (keys.has('arrowdown') || keys.has('s')) {
+    player.y += player.speed * dt;
+    isMoving = true;
+  }
 
-    // Boundary constraints
-    if (player.x < 0) player.x = 0;
-    if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    if (player.y < 0) player.y = 0;
-    if (player.y > canvas.height - player.height) player.y = canvas.height - player.height;
+  player.x = clamp(player.x, 0, canvas.width - player.width);
+  player.y = clamp(player.y, 0, canvas.height - player.height);
 
-    // Handle Sprite Sheets Animation Loops
-    if (isMoving) {
-        player.gameFrame++;
-        if (player.gameFrame % player.staggerFrames === 0) {
-            // Assume 4 animation frames per row, cycle back to 0
-            if (player.frameX < 3) player.frameX++;
-            else player.frameX = 0;
-        }
-    } else {
-        player.frameX = 0; // Default to standard idle pose when stopped
+  if (isMoving) {
+    player.gameFrame += 1;
+    if (player.gameFrame % player.staggerFrames === 0) {
+      player.frameX = (player.frameX + 1) % 4;
     }
+  } else {
+    player.frameX = 0;
+  }
 
-    // Check Coin Capture
-    if (checkCollision(player, coin)) {
-        score += 10;
-        // Relocate coin randomly
-        coin.x = Math.random() * (canvas.width - coin.width);
-        coin.y = Math.random() * (canvas.height - coin.height);
-    }
+  if (checkCollision(player, coin)) {
+    state.score += config.pickupValue;
+    respawnCoin();
+  }
 }
 
-// --- RENDER IMAGES TO CANVAS ---
+function drawBackground() {
+  ctx.fillStyle = '#0b1220';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.16)';
+  for (let x = 0; x < canvas.width; x += 40) {
+    for (let y = 0; y < canvas.height; y += 40) {
+      ctx.fillRect(x, y, 2, 2);
+    }
+  }
+}
+
 function draw() {
-    // 1. Clear previous canvas frames
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBackground();
 
-    // 2. Draw simple decorative background grid
-    ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-    ctx.fillRect(0, 400, canvas.width, 100);
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = '20px sans-serif';
+  ctx.fillText(`Score: ${state.score}`, 20, 35);
 
-    // 3. Draw static UI text
-    ctx.fillStyle = '#fff';
-    ctx.font = '20px sans-serif';
-    ctx.fillText(`Score: ${score}`, 20, 35);
+  ctx.drawImage(spriteSheet.coin, coin.x, coin.y, coin.width, coin.height);
 
-    // 4. Draw the Coin target
-    ctx.drawImage(coinSprite, coin.x, coin.y, coin.width, coin.height);
-
-    // 5. Draw the Player Animated Sprite using the 9-argument version of drawImage()
-    // ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
-    ctx.drawImage(
-        playerSprite, 
-        player.frameX * player.spriteWidth,  // Crop starting X coordinate
-        player.frameY * player.spriteHeight, // Crop starting Y coordinate
-        player.spriteWidth,                  // Width of source crop frame
-        player.spriteHeight,                 // Height of source crop frame
-        player.x,                            // Target X on Canvas
-        player.y,                            // Target Y on Canvas
-        player.width,                        // Width to stretch/draw player on canvas
-        player.height                        // Height to stretch/draw player on canvas
-    );
+  ctx.drawImage(
+    spriteSheet.player,
+    player.frameX * player.spriteWidth,
+    player.frameY * player.spriteHeight,
+    player.spriteWidth,
+    player.spriteHeight,
+    player.x,
+    player.y,
+    player.width,
+    player.height
+  );
 }
 
-// --- THE RECURSIVE ENGINE LOOP ---
-function gameLoop() {
-    update();
-    draw();
-    requestAnimationFrame(gameLoop);
+function gameLoop(timestamp) {
+  if (!state.lastTime) {
+    state.lastTime = timestamp;
+  }
+
+  const delta = Math.min((timestamp - state.lastTime) / 16.67, 2);
+  state.lastTime = timestamp;
+
+  update(delta);
+  draw();
+  requestAnimationFrame(gameLoop);
 }
 
-// Start game after image elements pull remote data assets safely
-playerSprite.onload = () => {
-    coinSprite.onload = () => {
-        gameLoop();
-    };
-};
+window.addEventListener('keydown', (event) => {
+  const key = event.key.toLowerCase();
+  keys.add(key);
+});
+
+window.addEventListener('keyup', (event) => {
+  keys.delete(event.key.toLowerCase());
+});
+
+respawnCoin();
+requestAnimationFrame(gameLoop);

@@ -8,6 +8,9 @@ const overlay = document.getElementById('overlay');
 const startButton = document.getElementById('startButton');
 
 const keys = {};
+const enemies = [];
+const particles = [];
+const pickups = [];
 
 const state = {
   started: false,
@@ -33,10 +36,6 @@ const player = {
   stepTimer: 0,
   slashArc: 0,
 };
-
-const enemies = [];
-const particles = [];
-const pickups = [];
 
 function resetGame() {
   state.started = false;
@@ -65,9 +64,9 @@ function resetGame() {
 }
 
 function updateHud() {
-  healthValue.textContent = Math.max(0, Math.ceil(player.health));
-  waveValue.textContent = state.wave;
-  scoreValue.textContent = state.score;
+  healthValue.textContent = String(Math.max(0, Math.ceil(player.health)));
+  waveValue.textContent = String(state.wave);
+  scoreValue.textContent = String(state.score);
 }
 
 function clamp(value, min, max) {
@@ -85,21 +84,18 @@ function startGame() {
 }
 
 function setKeyState(event, value) {
-  if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') keys.left = value;
-  if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') keys.right = value;
-  if (event.key === 'ArrowUp' || event.key.toLowerCase() === 'w') keys.up = value;
-  if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') keys.down = value;
+  const key = event.key.toLowerCase();
+
+  if (event.key === 'ArrowLeft' || key === 'a') keys.left = value;
+  if (event.key === 'ArrowRight' || key === 'd') keys.right = value;
+  if (event.key === 'ArrowUp' || key === 'w') keys.up = value;
+  if (event.key === 'ArrowDown' || key === 's') keys.down = value;
   if (event.code === 'Space') keys.attack = value;
-  if (event.key.toLowerCase() === 'r' && value) startGame();
+  if (key === 'r' && value) startGame();
 }
 
-window.addEventListener('keydown', (event) => {
-  setKeyState(event, true);
-});
-
-window.addEventListener('keyup', (event) => {
-  setKeyState(event, false);
-});
+window.addEventListener('keydown', (event) => setKeyState(event, true));
+window.addEventListener('keyup', (event) => setKeyState(event, false));
 
 function spawnEnemy() {
   const side = Math.floor(Math.random() * 4);
@@ -176,9 +172,7 @@ function getMovementVector() {
 }
 
 function slashAttack() {
-  if (player.attackTimer > 0) {
-    return;
-  }
+  if (player.attackTimer > 0) return;
 
   player.attackTimer = 0.28;
   player.slashArc = 1;
@@ -194,6 +188,7 @@ function slashAttack() {
     if (dist < swingRange + enemy.radius) {
       const enemyAngle = Math.atan2(dy, dx);
       const diff = Math.atan2(Math.sin(enemyAngle - slashAngle), Math.cos(enemyAngle - slashAngle));
+
       if (Math.abs(diff) < 1.2) {
         enemy.health -= 1;
         enemy.hitFlash = 0.16;
@@ -243,13 +238,11 @@ function updateEnemies(dt) {
     enemy.y += (dy / dist) * enemy.speed * dt;
     enemy.frame += dt * 14;
 
-    if (dist < player.radius + enemy.radius + 4) {
-      if (player.invulnerable <= 0) {
-        player.health -= 10;
-        player.invulnerable = 0.8;
-        state.shake = 12;
-        spawnBurst(player.x, player.y, '#ff6e7d', 18);
-      }
+    if (dist < player.radius + enemy.radius + 4 && player.invulnerable <= 0) {
+      player.health -= 10;
+      player.invulnerable = 0.8;
+      state.shake = 12;
+      spawnBurst(player.x, player.y, '#ff6e7d', 18);
     }
 
     enemy.hitFlash = Math.max(0, enemy.hitFlash - dt);
@@ -297,6 +290,7 @@ function updateParticles(dt) {
 
 function updateWave(dt) {
   state.enemyTimer -= dt;
+
   if (state.enemyTimer <= 0) {
     const spawnCount = Math.min(1 + state.wave, 4);
     for (let i = 0; i < spawnCount; i += 1) {
@@ -308,9 +302,7 @@ function updateWave(dt) {
 }
 
 function updateGame(dt) {
-  if (!state.started || state.gameOver) {
-    return;
-  }
+  if (!state.started || state.gameOver) return;
 
   state.time += dt;
   state.shake = Math.max(0, state.shake - dt * 35);
@@ -396,7 +388,7 @@ function drawSlashEffect() {
 }
 
 function drawPlayerSprite() {
-  const walking = Math.hypot(keys.left || keys.right ? 1 : 0, keys.up || keys.down ? 1 : 0) > 0;
+  const walking = Boolean(keys.left || keys.right || keys.up || keys.down);
   const frame = walking ? Math.floor((state.time * 12) % 4) : 0;
   const bob = walking ? Math.sin(state.time * 14) * 3 : 0;
 

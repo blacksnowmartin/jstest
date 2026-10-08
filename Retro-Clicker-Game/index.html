@@ -1,201 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vanilla JS Sprite Animation Game</title>
-    <style>
-        :root {
-            --bg: #222;
-            --panel: #333;
-            --text: #fff;
-            --muted: #aaa;
-            --border: #fff;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vanilla JS Sprite Animation Game</title>
+  <style>
+    :root {
+      --bg: #222;
+      --panel: #333;
+      --text: #fff;
+      --muted: #aaa;
+      --border: #fff;
+    }
 
-        * {
-            box-sizing: border-box;
-        }
+    * { box-sizing: border-box; }
 
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
-        }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', Courier, monospace;
+      overflow: hidden;
+    }
 
-        #game-container {
-            text-align: center;
-        }
+    #game-container { text-align: center; }
 
-        .ui-text {
-            margin: 0 0 10px;
-            font-size: 24px;
-        }
+    .ui-text {
+      margin: 0 0 10px;
+      font-size: 24px;
+    }
 
-        canvas {
-            display: block;
-            background: var(--panel);
-            border: 4px solid var(--border);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            cursor: pointer;
-        }
+    canvas {
+      display: block;
+      background: var(--panel);
+      border: 4px solid var(--border);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+    }
 
-        .instructions {
-            margin-top: 10px;
-            color: var(--muted);
-        }
-    </style>
+    .instructions {
+      margin-top: 10px;
+      color: var(--muted);
+    }
+  </style>
 </head>
 <body>
-    <div id="game-container">
-        <div class="ui-text">Score: <span id="score-display">0</span></div>
-        <canvas id="gameCanvas" width="600" height="400"></canvas>
-        <div class="instructions">Click the jumping slime before it hides!</div>
-    </div>
+  <div id="game-container">
+    <div class="ui-text">Score: <span id="score-display">0</span></div>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <div class="instructions">Click the jumping slime before it hides!</div>
+  </div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreDisplay = document.getElementById('score-display');
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score-display');
 
-        const SPRITE_WIDTH = 64;
-        const SPRITE_HEIGHT = 64;
-        const TOTAL_FRAMES = 4;
+    const SPRITE_WIDTH = 64;
+    const SPRITE_HEIGHT = 64;
+    const TOTAL_FRAMES = 4;
 
-        const spriteSheet = new Image();
-        spriteSheet.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="256" height="64" viewBox="0 0 256 64">
-                <rect width="64" height="64" fill="none"/>
-                <ellipse cx="32" cy="45" rx="25" ry="15" fill="#4caf50"/>
-                <ellipse cx="22" cy="40" rx="4" ry="4" fill="white"/>
-                <ellipse cx="42" cy="40" rx="4" ry="4" fill="white"/>
+    const spriteSheet = new Image();
+    spriteSheet.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="256" height="64" viewBox="0 0 256 64">
+        <rect width="64" height="64" fill="none"/>
+        <ellipse cx="32" cy="45" rx="25" ry="15" fill="#4caf50"/>
+        <ellipse cx="22" cy="40" rx="4" ry="4" fill="white"/>
+        <ellipse cx="42" cy="40" rx="4" ry="4" fill="white"/>
 
-                <rect x="64" width="64" height="64" fill="none"/>
-                <ellipse cx="96" cy="30" rx="20" ry="25" fill="#4caf50"/>
-                <ellipse cx="88" cy="25" rx="4" ry="4" fill="white"/>
-                <ellipse cx="104" cy="25" rx="4" ry="4" fill="white"/>
+        <rect x="64" width="64" height="64" fill="none"/>
+        <ellipse cx="96" cy="30" rx="20" ry="25" fill="#4caf50"/>
+        <ellipse cx="88" cy="25" rx="4" ry="4" fill="white"/>
+        <ellipse cx="104" cy="25" rx="4" ry="4" fill="white"/>
 
-                <rect x="128" width="64" height="64" fill="none"/>
-                <ellipse cx="160" cy="15" rx="18" ry="15" fill="#4caf50"/>
-                <ellipse cx="152" cy="15" rx="4" ry="4" fill="white"/>
-                <ellipse cx="168" cy="15" rx="4" ry="4" fill="white"/>
+        <rect x="128" width="64" height="64" fill="none"/>
+        <ellipse cx="160" cy="15" rx="18" ry="15" fill="#4caf50"/>
+        <ellipse cx="152" cy="15" rx="4" ry="4" fill="white"/>
+        <ellipse cx="168" cy="15" rx="4" ry="4" fill="white"/>
 
-                <rect x="192" width="64" height="64" fill="none"/>
-                <ellipse cx="224" cy="40" rx="24" ry="18" fill="#8bc34a"/>
-                <ellipse cx="216" cy="35" rx="4" ry="4" fill="white"/>
-                <ellipse cx="232" cy="35" rx="4" ry="4" fill="white"/>
-            </svg>
-        `);
+        <rect x="192" width="64" height="64" fill="none"/>
+        <ellipse cx="224" cy="40" rx="24" ry="18" fill="#8bc34a"/>
+        <ellipse cx="216" cy="35" rx="4" ry="4" fill="white"/>
+        <ellipse cx="232" cy="35" rx="4" ry="4" fill="white"/>
+      </svg>
+    `);
 
-        class Slime {
-            constructor() {
-                this.frameX = 0;
-                this.gameFrame = 0;
-                this.staggerFrames = 8;
-                this.resetPosition();
-            }
+    class Slime {
+      constructor() {
+        this.frameX = 0;
+        this.gameFrame = 0;
+        this.staggerFrames = 8;
+        this.resetPosition();
+      }
 
-            resetPosition() {
-                this.x = Math.random() * (canvas.width - SPRITE_WIDTH);
-                this.y = Math.random() * (canvas.height - SPRITE_HEIGHT);
-            }
+      resetPosition() {
+        this.x = Math.random() * (canvas.width - SPRITE_WIDTH);
+        this.y = Math.random() * (canvas.height - SPRITE_HEIGHT);
+      }
 
-            update() {
-                this.gameFrame++;
+      update() {
+        this.gameFrame += 1;
 
-                if (this.gameFrame % this.staggerFrames === 0) {
-                    this.frameX = (this.frameX + 1) % TOTAL_FRAMES;
+        if (this.gameFrame % this.staggerFrames === 0) {
+          this.frameX = (this.frameX + 1) % TOTAL_FRAMES;
 
-                    if (this.frameX === 0 && Math.random() > 0.5) {
-                        this.resetPosition();
-                    }
-                }
-            }
-
-            draw() {
-                ctx.drawImage(
-                    spriteSheet,
-                    this.frameX * SPRITE_WIDTH,
-                    0,
-                    SPRITE_WIDTH,
-                    SPRITE_HEIGHT,
-                    this.x,
-                    this.y,
-                    SPRITE_WIDTH,
-                    SPRITE_HEIGHT
-                );
-            }
-
-            containsPoint(x, y) {
-                return (
-                    x >= this.x &&
-                    x <= this.x + SPRITE_WIDTH &&
-                    y >= this.y &&
-                    y <= this.y + SPRITE_HEIGHT
-                );
-            }
+          if (this.frameX === 0 && Math.random() > 0.5) {
+            this.resetPosition();
+          }
         }
+      }
 
-        class Game {
-            constructor() {
-                this.score = 0;
-                this.slime = new Slime();
-                this.isRunning = false;
-            }
+      draw() {
+        ctx.drawImage(
+          spriteSheet,
+          this.frameX * SPRITE_WIDTH,
+          0,
+          SPRITE_WIDTH,
+          SPRITE_HEIGHT,
+          this.x,
+          this.y,
+          SPRITE_WIDTH,
+          SPRITE_HEIGHT
+        );
+      }
 
-            increaseScore() {
-                this.score += 1;
-                scoreDisplay.textContent = String(this.score);
-            }
+      containsPoint(x, y) {
+        return x >= this.x && x <= this.x + SPRITE_WIDTH && y >= this.y && y <= this.y + SPRITE_HEIGHT;
+      }
+    }
 
-            handlePointerDown(event) {
-                const rect = canvas.getBoundingClientRect();
-                const clickX = event.clientX - rect.left;
-                const clickY = event.clientY - rect.top;
+    class Game {
+      constructor() {
+        this.score = 0;
+        this.slime = new Slime();
+        this.isRunning = false;
+      }
 
-                if (this.slime.containsPoint(clickX, clickY)) {
-                    this.increaseScore();
-                    this.slime.resetPosition();
-                }
-            }
+      increaseScore() {
+        this.score += 1;
+        scoreDisplay.textContent = String(this.score);
+      }
 
-            update() {
-                this.slime.update();
-            }
+      handlePointerDown(event) {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
 
-            draw() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                this.slime.draw();
-            }
-
-            loop() {
-                if (!this.isRunning) return;
-
-                this.update();
-                this.draw();
-                requestAnimationFrame(() => this.loop());
-            }
-
-            start() {
-                this.isRunning = true;
-                this.loop();
-            }
+        if (this.slime.containsPoint(clickX, clickY)) {
+          this.increaseScore();
+          this.slime.resetPosition();
         }
+      }
 
-        const game = new Game();
+      update() {
+        this.slime.update();
+      }
 
-        canvas.addEventListener('mousedown', (event) => game.handlePointerDown(event));
+      draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this.slime.draw();
+      }
 
-        spriteSheet.onload = () => {
-            game.start();
-        };
-    </script>
+      loop() {
+        if (!this.isRunning) return;
+        this.update();
+        this.draw();
+        requestAnimationFrame(() => this.loop());
+      }
+
+      start() {
+        this.isRunning = true;
+        this.loop();
+      }
+    }
+
+    const game = new Game();
+    canvas.addEventListener('mousedown', (event) => game.handlePointerDown(event));
+
+    spriteSheet.onload = () => {
+      game.start();
+    };
+  </script>
 </body>
 </html>
 
