@@ -212,7 +212,6 @@ class CIAGuiApp(App):
                 SystemStatus(),
                 classes="module-box",
             ),
-            width=1,
         )
 
         yield Horizontal(
