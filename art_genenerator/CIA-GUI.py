@@ -148,43 +148,22 @@ class DiagnosticsPanel(Static):
 class CIAGuiApp(App):
     CSS = """
     Screen {
-        background: radial-gradient(circle at top, rgba(30, 88, 140, 0.25), transparent 38%),
-                    linear-gradient(180deg, #02070b 0%, #040d15 35%, #02070c 100%);
+        background: #02070b;
         color: #d8f7ff;
         overflow: hidden;
-    }
-
-    @keyframes pulse-glow {
-        0% { box-shadow: 0 0 0 rgba(40, 210, 255, 0.1); }
-        50% { box-shadow: 0 0 20px rgba(40, 210, 255, 0.45), inset 0 0 10px rgba(40, 210, 255, 0.12); }
-        100% { box-shadow: 0 0 0 rgba(40, 210, 255, 0.1); }
-    }
-
-    @keyframes scanline {
-        0% { background-position: 0 0; }
-        100% { background-position: 0 100%; }
     }
 
     TacticalHeader {
         background: #07151c;
         border-bottom: double #12d4ff;
-        box-shadow: inset 0 0 12px rgba(18, 212, 255, 0.18);
         padding: 1 2;
         height: 3;
         color: #d9f3ff;
-        text-shadow: 0 0 8px #75dfff;
     }
 
     .scan-grid {
         height: 1;
-        background: repeating-linear-gradient(
-            to bottom,
-            rgba(75, 255, 210, 0.12),
-            rgba(75, 255, 210, 0.12) 1px,
-            transparent 1px,
-            transparent 5px
-        );
-        animation: scanline 9s linear infinite;
+        background: #0b1d2a;
         margin: 0 1;
     }
 
@@ -200,55 +179,46 @@ class CIAGuiApp(App):
         margin: 0 1 1 1;
         padding: 1 2;
         border: solid #1d8ae6;
-        background: linear-gradient(180deg, rgba(8, 27, 42, 0.96), rgba(5, 15, 23, 0.96));
+        background: #081b2a;
         color: #dff7ff;
-        box-shadow: 0 0 12px rgba(29, 138, 230, 0.4), inset 0 0 18px rgba(87, 194, 255, 0.14);
-        text-shadow: 0 0 8px rgba(125, 226, 255, 0.7);
-        animation: pulse-glow 3s infinite ease-in-out;
     }
 
     .module-box {
         border: solid #1ab69d;
-        background: linear-gradient(180deg, rgba(7, 22, 19, 0.96), rgba(5, 14, 17, 0.96));
+        background: #071b17;
         padding: 1;
         margin: 0 1 1 1;
-        box-shadow: inset 0 0 20px rgba(26, 182, 157, 0.14), 0 0 14px rgba(22, 166, 160, 0.16);
     }
 
     .title {
         color: #f3f8ff;
-        background: linear-gradient(90deg, rgba(13, 41, 59, 0.95), rgba(11, 19, 29, 0.95));
+        background: #0d2332;
         border: solid #204f74;
-        box-shadow: 0 0 14px rgba(34, 131, 196, 0.28), inset 0 0 12px rgba(126, 217, 255, 0.18);
         padding: 0 1;
         margin-bottom: 1;
         text-align: center;
         text-style: bold;
-        text-shadow: 0 0 8px rgba(128, 211, 255, 0.8);
     }
 
     .panel-label {
         color: #aee8ff;
         margin-top: 1;
-        text-shadow: 0 0 7px rgba(130, 214, 255, 0.8);
     }
 
     LiveLogConsole {
         height: 16;
         color: #7ef1c8;
-        background: rgba(4, 17, 17, 0.95);
+        background: #041711;
         border: solid #11362e;
         padding: 1;
-        box-shadow: inset 0 0 16px rgba(84, 255, 190, 0.12), 0 0 12px rgba(36, 171, 110, 0.15);
         overflow: auto;
     }
 
     DataTable {
         height: 14;
         border: solid #214d53;
-        background: rgba(2, 13, 18, 0.96);
+        background: #020d12;
         color: #d3fff5;
-        box-shadow: inset 0 0 10px rgba(78, 230, 208, 0.12);
     }
 
     ProgressBar {
@@ -258,7 +228,6 @@ class CIAGuiApp(App):
     Footer {
         background: #071018;
         color: #9ce7ff;
-        text-shadow: 0 0 8px rgba(115, 234, 255, 0.9);
     }
     """
 
